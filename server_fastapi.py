@@ -187,7 +187,7 @@ async def create_checkout_session(product_info: ProductInfo):
                     'quantity': 1,
         }],
     )
-    return {"sessionId": checkout_session["id"]}
+    return {"sessionId": checkout_session["id"], "url":checkout_session.url}
 
 
 @app.post("/create-portal-session")
