@@ -391,9 +391,9 @@ def handle_checkout_session(session):
                 'data': json.dumps(transaction_data)
             }).execute()
             
-            print(f"Transaction saved to Supabase: {result}")
+            return (f"Transaction saved to Supabase: {result}")
     except Exception as e:
-            print(f"An error occurs while saving in database : {e}")
+            return (f"An error occurs while saving in database : {e}")
 
 if __name__ == '__main__':
     uvicorn.run(app, host="0.0.0.0", port=8000)
