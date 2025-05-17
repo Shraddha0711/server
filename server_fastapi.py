@@ -244,7 +244,7 @@ def handle_checkout_session(session):
         'amount': amount_total,
         'timestamp': firestore.SERVER_TIMESTAMP,
     }
-    db.collection('transactions').add(transaction_data)
+    db.collection('test_transactions').add(transaction_data)
         
 
 if __name__ == '__main__':
