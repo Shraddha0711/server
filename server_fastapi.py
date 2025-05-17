@@ -57,13 +57,21 @@ async def create_checkout_session_api(product_info: ProductInfo):
                 },
             ],
             mode='payment',
-            success_url=YOUR_DOMAIN + '?success=true',
-            cancel_url=YOUR_DOMAIN + '?canceled=true',
+            success_url='/sucesss',
+            cancel_url='/cancel',
         )
         return {"checkout_url": checkout_session.url}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/success")
+async def success(request: Request):
+    return {'status' : 'request successfull'}
+
+@app.get("/cancel")
+async def success(request: Request):
+    return {'status' : 'request failed'}
+    
 # Form endpoint for HTML form submissions  
 @app.post("/create-checkout-session")
 async def create_checkout_session(request: Request):
