@@ -204,7 +204,7 @@ async def webhook_received(request: Request, stripe_signature: str = Header(None
     webhook_secret = "whsec_MjdtxocKXMAnafmVg88rambUP7d9sKOg"
     # webhook_secret = "whsec_dbc51a61bed928be0a6d60efce987c73198e5a18a72eba8d32b398373e47796"
     data = await request.body()
-    pprint("this is data : ",data)
+    print("this is data : ",data)
     try:
         event = stripe.Webhook.construct_event(
             payload=data,
@@ -212,7 +212,7 @@ async def webhook_received(request: Request, stripe_signature: str = Header(None
             secret=webhook_secret
         )
         event_data = event['data']
-        pprint("this is event data : ",event_data)
+        print("this is event data : ",event_data)
     except Exception as e:
         return {"error": str(e)}
 
