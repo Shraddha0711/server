@@ -57,7 +57,7 @@ async def create_checkout_session_api(product_info: ProductInfo):
                 },
             ],
             mode='payment',
-            success_url='/sucess',
+            success_url='/success',
             cancel_url='/cancel',
         )
         return {"checkout_url": checkout_session.url}
