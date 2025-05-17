@@ -204,6 +204,7 @@ async def webhook_received(request: Request, stripe_signature: str = Header(None
     webhook_secret = "whsec_MjdtxocKXMAnafmVg88rambUP7d9sKOg"
     # webhook_secret = "whsec_dbc51a61bed928be0a6d60efce987c73198e5a18a72eba8d32b398373e47796"
     data = await request.body()
+    pprint("this is data : ",data)
     try:
         event = stripe.Webhook.construct_event(
             payload=data,
@@ -211,11 +212,11 @@ async def webhook_received(request: Request, stripe_signature: str = Header(None
             secret=webhook_secret
         )
         event_data = event['data']
+        pprint("this is event data : ",event_data)
     except Exception as e:
         return {"error": str(e)}
 
     event_type = event['type']
-    print(event_type)
     if event_type == 'checkout.session.completed':
         return {"status": "checkout session completed"}
     elif event_type == 'payment_intent.succeeded':
@@ -230,7 +231,6 @@ async def webhook_received(request: Request, stripe_signature: str = Header(None
 def handle_checkout_session(session):
     # Fulfill the purchase
     customer_email = session.get('customer_email')
-    pprint(session)
     # product_name = session['display_items'][0]['custom']['name']
     amount_total = session['amount_received']
     product_name = 'Connect Package'
