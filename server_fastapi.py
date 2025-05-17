@@ -377,21 +377,23 @@ def handle_checkout_session(session):
     amount = float(amount_total)/100
     product_name = 'Connect Package'
     receipt_email = session['receipt_email']
-
-    # Store transaction in Supabase
-    transaction_data = {
-        'email': customer_email,
-        'product': product_name,
-        'amount': amount,
-        'timestamp': datetime.now().isoformat(),
-    }
-    
-    # Insert into Supabase
-    result = supabase.table('transactions').insert({
-        'data': json.dumps(transaction_data)
-    }).execute()
-    
-    print(f"Transaction saved to Supabase: {result}")
+    try:
+            # Store transaction in Supabase
+            transaction_data = {
+                'email': customer_email,
+                'product': product_name,
+                'amount': amount,
+                'timestamp': datetime.now().isoformat(),
+            }
+            
+            # Insert into Supabase
+            result = supabase.table('transactions').insert({
+                'data': json.dumps(transaction_data)
+            }).execute()
+            
+            print(f"Transaction saved to Supabase: {result}")
+    except Exception as e:
+            print(f"An error occurs while saving in database : {e}")
 
 if __name__ == '__main__':
     uvicorn.run(app, host="0.0.0.0", port=8000)
