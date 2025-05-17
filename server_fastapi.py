@@ -201,7 +201,8 @@ async def create_portal_session():
 
 @app.post("/webhook")
 async def webhook_received(request: Request, stripe_signature: str = Header(None)):
-    webhook_secret = "whsec_dbc51a61bed928be0a6d60efce987c73198e5a18a72eba8d32b398373e47796"
+    webhook_secret = "whsec_MjdtxocKXMAnafmVg88rambUP7d9sKOg"
+    # webhook_secret = "whsec_dbc51a61bed928be0a6d60efce987c73198e5a18a72eba8d32b398373e47796"
     data = await request.body()
     try:
         event = stripe.Webhook.construct_event(
