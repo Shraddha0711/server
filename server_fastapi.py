@@ -213,6 +213,7 @@ async def webhook_received(request: Request, stripe_signature: str = Header(None
             sig_header=stripe_signature,
             secret=webhook_secret
         )
+        print("this is event : ", event)
         event_data = event['data']
         print("this is event data : ",event_data)
     except Exception as e:
