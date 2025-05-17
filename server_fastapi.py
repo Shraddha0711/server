@@ -57,8 +57,8 @@ async def create_checkout_session_api(product_info: ProductInfo):
                 },
             ],
             mode='payment',
-            success_url='/sucesss',
-            cancel_url='/cancel',
+            # success_url='/sucesss',
+            # cancel_url='/cancel',
         )
         return {"checkout_url": checkout_session.url}
     except Exception as e:
