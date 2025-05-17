@@ -255,26 +255,45 @@
 # if __name__ == '__main__':
 #     uvicorn.run(app, host="0.0.0.0", port=8000)
 
-
 import os
+from datetime import datetime
+
 import stripe
 import uvicorn
-from fastapi import FastAPI, Request, Header
-from pydantic import BaseModel
 from dotenv import load_dotenv
-from supabase import create_client, Client
-import json
-from datetime import datetime
+from fastapi import FastAPI, Request, Header
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from supabase import create_client
 
 # Load environment variables
 load_dotenv()
 
 # Initialize Supabase
-supabase_url = os.getenv("SUPABASE_URL")
-supabase_key = os.getenv("SUPABASE_KEY")
-supabase: Client = create_client(supabase_url, supabase_key)
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+# Initialize Stripe
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
+
+# Initialize FastAPI app
 app = FastAPI()
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Store Stripe customer ID in app state (for demo purposes)
+app.state.stripe_customer_id = None
+
+# ---------------------------- MODELS ----------------------------
 
 class ProductInfo(BaseModel):
     product_name: str
@@ -285,31 +304,25 @@ class ProductInfo(BaseModel):
     user_id: str = ""
     number_of_connects: int = 0
 
-stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
-# This is a terrible idea, only used for demo purposes!
-app.state.stripe_customer_id = None
-
+# ---------------------------- ROUTES ----------------------------
 
 @app.get("/success")
-async def success(request: Request):
+async def success():
     return {"status": "success"}
 
-
 @app.get("/cancel")
-async def cancel(request: Request):
+async def cancel():
     return {"status": "cancel"}
-
 
 @app.post("/create-checkout-session")
 async def create_checkout_session(product_info: ProductInfo):
+    # Create customer once (demo purpose only)
     if not app.state.stripe_customer_id:
-        customer = stripe.Customer.create(
-            description="Demo customer",
-        )
+        customer = stripe.Customer.create(description="Demo customer")
         app.state.stripe_customer_id = customer["id"]
- 
+
     unit_amount = int(product_info.product_price * 100)
-        
+
     checkout_session = stripe.checkout.Session.create(
         customer=app.state.stripe_customer_id,
         success_url="https://server-x8m2.onrender.com/success?session_id={CHECKOUT_SESSION_ID}",
@@ -317,21 +330,24 @@ async def create_checkout_session(product_info: ProductInfo):
         payment_method_types=["card"],
         mode="payment",
         line_items=[{
-                    "price_data": {
-                        "currency": product_info.currency,
-                        "product_data": {
-                            "name": product_info.product_name,
-                            "images": [product_info.product_image],
-                            "description": product_info.product_description,
-                        },
-                        "unit_amount": unit_amount,
-                    },
-                    'quantity': 1,
+            "price_data": {
+                "currency": product_info.currency,
+                "product_data": {
+                    "name": product_info.product_name,
+                    "images": [product_info.product_image],
+                    "description": product_info.product_description,
+                },
+                "unit_amount": unit_amount,
+            },
+            "quantity": 1,
         }],
-        metadata={"user_id":product_info.user_id,"number_of_connects":product_info.number_of_connects},
+        metadata={
+            "user_id": product_info.user_id,
+            "number_of_connects": product_info.number_of_connects,
+        },
     )
-    return {"sessionId": checkout_session["id"], "url":checkout_session.url}
 
+    return {"sessionId": checkout_session["id"], "url": checkout_session.url}
 
 @app.post("/create-portal-session")
 async def create_portal_session():
@@ -341,59 +357,51 @@ async def create_portal_session():
     )
     return {"url": session.url}
 
-
 @app.post("/webhook")
 async def webhook_received(request: Request, stripe_signature: str = Header(None)):
-    webhook_secret = "whsec_..."
     data = await request.body()
-    print("this is data : ",data)
+
     try:
         event = stripe.Webhook.construct_event(
             payload=data,
             sig_header=stripe_signature,
-            secret=webhook_secret
+            secret=STRIPE_WEBHOOK_SECRET,
         )
-        event_data = event['data']
-        print("this is event data : ",event_data)
     except Exception as e:
         return {"error": str(e)}
 
     event_type = event['type']
+    session = event['data']['object']
+
     if event_type == 'checkout.session.completed':
         return {"status": "checkout session completed"}
     elif event_type == 'payment_intent.succeeded':
-        session = event['data']['object']
         handle_checkout_session(session)
         return {"status": "invoice paid"}
     elif event_type == 'invoice.payment_failed':
         return {"status": "invoice payment failed"}
     else:
-        return {"status": f'unhandled event: {event_type}'}
+        return {"status": f"unhandled event: {event_type}"}
+
+# ---------------------------- UTILITY ----------------------------
 
 def handle_checkout_session(session):
-    # Fulfill the purchase
     customer_email = session.get('customer_email')
-    amount_total = session['amount_received']
-    amount = float(amount_total)/100
+    receipt_email = session.get('receipt_email')
+    amount_total = session.get('amount_received', 0)
+    amount = float(amount_total) / 100
     product_name = 'Connect Package'
-    receipt_email = session['receipt_email']
-    try:
-            # Store transaction in Supabase
-            transaction_data = {
-                'email': customer_email,
-                'product': product_name,
-                'amount': amount,
-                'timestamp': datetime.now().isoformat(),
-            }
-            
-            # Insert into Supabase
-            result = supabase.table('transactions').insert({
-                'data': json.dumps(transaction_data)
-            }).execute()
-            
-            return (f"Transaction saved to Supabase: {result}")
-    except Exception as e:
-            return (f"An error occurs while saving in database : {e}")
 
-if __name__ == '__main__':
+    transaction_data = {
+        'email': customer_email or receipt_email,
+        'product': product_name,
+        'amount': amount,
+        'timestamp': str(datetime.now()),
+    }
+
+    response = supabase.table("transactions").insert({"data": transaction_data}).execute()
+
+# ---------------------------- ENTRY POINT ----------------------------
+
+if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
