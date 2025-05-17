@@ -156,7 +156,9 @@ async def create_checkout_session(product_info: ProductInfo):
             description="Demo customer",
         )
         app.state.stripe_customer_id = customer["id"]
-
+ 
+    unit_amount = int(product_info.product_price * 100)
+        
     checkout_session = stripe.checkout.Session.create(
         customer=app.state.stripe_customer_id,
         success_url="https://server-x8m2.onrender.com/success?session_id={CHECKOUT_SESSION_ID}",
