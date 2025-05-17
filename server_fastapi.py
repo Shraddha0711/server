@@ -25,7 +25,7 @@ app.add_middleware(
 # Your Stripe secret key
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
-YOUR_DOMAIN=os.getenv('DOMAIN')
+# YOUR_DOMAIN=os.getenv('DOMAIN')
 
 # Define a model for the product data
 class ProductInfo(BaseModel):
