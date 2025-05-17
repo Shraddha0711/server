@@ -141,6 +141,8 @@ class ProductInfo(BaseModel):
     currency: str = "usd"
     product_image: str = "https://i.imgur.com/EHyR2nP.png"
     product_description: str = ""
+    user_id: str = ""
+    number_of_connects: int = 0
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 # This is a terrible idea, only used for demo purposes!
@@ -173,8 +175,7 @@ async def create_checkout_session(product_info: ProductInfo):
         cancel_url="https://server-x8m2.onrender.com/cancel",
         payment_method_types=["card"],
         mode="payment",
-        line_items=[
-                {
+        line_items=[{
                     "price_data": {
                         "currency": product_info.currency,
                         "product_data": {
@@ -186,6 +187,7 @@ async def create_checkout_session(product_info: ProductInfo):
                     },
                     'quantity': 1,
         }],
+        metadata={"user_id":product_info.user_id,"number_of_connects":product_info.number_of_connects},
     )
     return {"sessionId": checkout_session["id"], "url":checkout_session.url}
 
