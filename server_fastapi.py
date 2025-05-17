@@ -150,9 +150,7 @@ async def cancel(request: Request):
 
 
 @app.post("/create-checkout-session")
-async def create_checkout_session(request: ProductInfo):
-    data = await request.form()
-
+async def create_checkout_session(product_info: ProductInfo):
     if not app.state.stripe_customer_id:
         customer = stripe.Customer.create(
             description="Demo customer",
