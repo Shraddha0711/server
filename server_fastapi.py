@@ -396,10 +396,9 @@ def handle_checkout_session(session):
         'email': customer_email or receipt_email,
         'product': product_name,
         'amount': amount,
-        'timestamp': str(datetime.now()),
     }
 
-    response = supabase.table("transactions").insert({"data": transaction_data}).execute()
+    response = supabase.table("transactions").insert({"data": transaction_data, 'timestamp': datetime.now()}).execute()
 
 # ---------------------------- ENTRY POINT ----------------------------
 
