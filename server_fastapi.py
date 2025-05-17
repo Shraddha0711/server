@@ -233,6 +233,7 @@ def handle_checkout_session(session):
     customer_email = session.get('customer_email')
     # product_name = session['display_items'][0]['custom']['name']
     amount_total = session['amount_received']
+    amount = float(amount_total)/100
     product_name = 'Connect Package'
     receipt_email=session['receipt_email']
 
@@ -241,7 +242,7 @@ def handle_checkout_session(session):
     transaction_data = {
         'email': receipt_email,
         'product': product_name,
-        'amount': amount_total,
+        'amount': amount,
         'timestamp': firestore.SERVER_TIMESTAMP,
     }
     db.collection('test_transactions').add(transaction_data)
