@@ -123,7 +123,15 @@ from fastapi import FastAPI, Request, Header
 from pydantic import BaseModel
 from dotenv import load_dotenv
 load_dotenv()
+from firebase_admin import credentials, firestore, initialize_app
+import os
+from pprint import pprint
 
+# Initialize Firebase
+cred_path = os.getenv("CRED_PATH")
+cred = credentials.Certificate(cred_path)
+initialize_app(cred)
+db = firestore.client()
 
 app = FastAPI()
 
@@ -209,12 +217,33 @@ async def webhook_received(request: Request, stripe_signature: str = Header(None
     if event_type == 'checkout.session.completed':
         return {"status": "checkout session completed"}
     elif event_type == 'invoice.paid':
+        session = event['data']['object']
+        handle_checkout_session(session)
         return {"status": "invoice paid"}
     elif event_type == 'invoice.payment_failed':
         return {"status": "invoice payment failed"}
     else:
         return {"status": f'unhandled event: {event_type}'}
-    
+
+def handle_checkout_session(session):
+    # Fulfill the purchase
+    customer_email = session.get('customer_email')
+    pprint(session)
+    # product_name = session['display_items'][0]['custom']['name']
+    amount_total = session['amount_received']
+    product_name = 'Connect Package'
+    receipt_email=session['receipt_email']
+
+
+    # Example: Update Firestore with the transaction
+    transaction_data = {
+        'email': receipt_email,
+        'product': product_name,
+        'amount': amount_total,
+        'timestamp': firestore.SERVER_TIMESTAMP,
+    }
+    db.collection('transactions').add(transaction_data)
+        
 
 if __name__ == '__main__':
     uvicorn.run(app, host="0.0.0.0", port=8000)
