@@ -164,7 +164,7 @@ async def create_checkout_session(product_info: ProductInfo):
         success_url="https://server-x8m2.onrender.com/success?session_id={CHECKOUT_SESSION_ID}",
         cancel_url="https://server-x8m2.onrender.com/cancel",
         payment_method_types=["card"],
-        mode="subscription",
+        mode="payment",
         line_items=[
                 {
                     "price_data": {
