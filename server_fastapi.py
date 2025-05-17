@@ -232,6 +232,7 @@ async def webhook_received(request: Request, stripe_signature: str = Header(None
 
 def handle_checkout_session(session):
     # Fulfill the purchase
+    print("this is session data : ", session)
     customer_email = session.get('customer_email')
     # product_name = session['display_items'][0]['custom']['name']
     amount_total = session['amount_received']
