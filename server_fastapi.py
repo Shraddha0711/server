@@ -9,7 +9,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-
+YOUR_DOMAIN = "https://server-x8m2.onrender.com"
 
 
 app = FastAPI()
@@ -25,7 +25,7 @@ app.add_middleware(
 # Your Stripe secret key
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
-YOUR_DOMAIN = os.getenv('DOMAIN')
+YOUR_DOMAIN=os.getenv('DOMAIN')
 
 # Define a model for the product data
 class ProductInfo(BaseModel):
@@ -57,8 +57,8 @@ async def create_checkout_session_api(product_info: ProductInfo):
                 },
             ],
             mode='payment',
-            success_url='/success',
-            cancel_url='/cancel',
+            success_url=f'{YOUR_DOMAIN}/success',
+            cancel_url=f'{YOUR_DOMAIN}/cancel',
         )
         return {"checkout_url": checkout_session.url}
     except Exception as e:
