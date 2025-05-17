@@ -120,12 +120,19 @@ import os
 import stripe
 import uvicorn
 from fastapi import FastAPI, Request, Header
+from pydantic import BaseModel
 from dotenv import load_dotenv
 load_dotenv()
 
 
 app = FastAPI()
 
+class ProductInfo(BaseModel):
+    product_name: str
+    product_price: float
+    currency: str = "usd"
+    product_image: str = "https://i.imgur.com/EHyR2nP.png"
+    product_description: str = ""
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 # This is a terrible idea, only used for demo purposes!
@@ -143,7 +150,7 @@ async def cancel(request: Request):
 
 
 @app.post("/create-checkout-session")
-async def create_checkout_session(request: Request):
+async def create_checkout_session(request: ProductInfo):
     data = await request.form()
 
     if not app.state.stripe_customer_id:
@@ -158,9 +165,18 @@ async def create_checkout_session(request: Request):
         cancel_url="https://server-x8m2.onrender.com/cancel",
         payment_method_types=["card"],
         mode="subscription",
-        line_items=[{
-            "price": data["priceId"],
-            "quantity": 1
+        line_items=[
+                {
+                    "price_data": {
+                        "currency": product_info.currency,
+                        "product_data": {
+                            "name": product_info.product_name,
+                            "images": [product_info.product_image],
+                            "description": product_info.product_description,
+                        },
+                        "unit_amount": unit_amount,
+                    },
+                    'quantity': 1,
         }],
     )
     return {"sessionId": checkout_session["id"]}
